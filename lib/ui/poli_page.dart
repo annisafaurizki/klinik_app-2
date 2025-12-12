@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
 import 'package:klinik_app/ui/poli_detail.dart';
 
 import '../model/poli.dart';
@@ -34,10 +35,10 @@ class _PoliPageState extends State<PoliPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const Sidebar(),
-      backgroundColor: const Color(0xFFF2F4F8), // kayak manajemen akun
+      backgroundColor: AppColor.backgroundBlue, // kayak manajemen akun
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColor.backgroundBlue, // biar nyatu (ga putih)
         foregroundColor: Colors.black,
         elevation: 0,
         title: const Text(
@@ -45,7 +46,14 @@ class _PoliPageState extends State<PoliPage> {
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: _bukaForm),
+          // ✅ GestureDetector TETAP
+          GestureDetector(
+            onTap: _bukaForm,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Icon(Icons.add),
+            ),
+          ),
         ],
       ),
       body: StreamBuilder<List<Poli>>(
@@ -89,15 +97,12 @@ class _PoliPageState extends State<PoliPage> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Color.fromARGB(255, 222, 235, 247),
                       borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      border: Border.all(
+                        color: AppColor.white, // 👈 warna border
+                        width: 1, // 👈 ketebalan
+                      ),
                     ),
                     padding: const EdgeInsets.all(10),
                     child: Column(
@@ -108,18 +113,17 @@ class _PoliPageState extends State<PoliPage> {
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.home_work_rounded, // icon rumah
-                            color: Color(0xFF1976D2),
+                            color: AppColor.blue,
                             size: 32,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          poli.namaPoli, // ✅ FIX ERROR
+                          poli.namaPoli, // ✅ FIX: field bener
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
