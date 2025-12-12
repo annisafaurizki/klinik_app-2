@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/ui/beranda.dart';
+
 import 'helpers/user_info.dart';
 import 'ui/login.dart';
-import 'ui/beranda.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

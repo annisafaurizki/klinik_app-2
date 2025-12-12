@@ -16,6 +16,8 @@ dependencies:
   fl_chart: ^0.69.0
   cupertino_icons: ^1.0.8
   barcode: ^2.2.3
+  image_picker: ^1.2.1
+  stylish_bottom_bar: ^1.1.1
 
   # Tambahan sesuai kebutuhan project
   dio: ^5.7.0
@@ -31,5 +33,5 @@ flutter:
   uses-material-design: true
 
   # Uncomment & tambah jika ingin menambahkan assets:
-  # assets:
-  #   - assets/images/
+  assets:
+    - assets/images/

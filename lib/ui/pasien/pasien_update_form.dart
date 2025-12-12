@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../model/pasien.dart';
 import '../../service/pasien_service.dart';
-import 'pasien_detail.dart';
 
 class PasienUpdateForm extends StatefulWidget {
   final Pasien pasien;
@@ -51,28 +51,27 @@ class _PasienUpdateFormState extends State<PasienUpdateForm> {
               ElevatedButton(
                 child: const Text("Simpan Perubahan"),
                 onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    Pasien pasien = Pasien(
-                      id: widget.pasien.id,
-                      nomorRm: _rm.text,
-                      nama: _nama.text,
-                      tanggalLahir: _tgl.text,
-                      nomorTelepon: _telp.text,
-                      alamat: _alamat.text,
-                    );
+                  if (!_formKey.currentState!.validate()) return;
 
-                    final value = await PasienService().ubah(
-                      pasien,
-                      widget.pasien.id!,
-                    );
+                  final pasien = Pasien(
+                    id: widget.pasien.id,
+                    nomorRm: _rm.text.trim(),
+                    nama: _nama.text.trim(),
+                    tanggalLahir: _tgl.text.trim(),
+                    nomorTelepon: _telp.text.trim(),
+                    alamat: _alamat.text.trim(),
+                  );
 
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PasienDetail(pasien: value),
-                      ),
-                    );
-                  }
+                  final value = await PasienService().ubah(
+                    pasien,
+                    widget.pasien.id!,
+                  );
+
+                  if (!context.mounted) return;
+                  Navigator.pop(
+                    context,
+                    value,
+                  ); // ✅ balik ke detail lama, bawa data baru
                 },
               ),
             ],
