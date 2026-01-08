@@ -7,4 +7,5 @@ class AppImage {
   static final kLogoPNG = _imagePath('logo.png');
   static final kSplashPNG = _imagePath('splash.jpg');
   static final kBGLogin = _imagePath('bg_login.png');
+  static final kHeartBeat = _imagePath('HeartBeat.png');
 }

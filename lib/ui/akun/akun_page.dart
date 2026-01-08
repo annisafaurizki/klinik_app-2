@@ -28,7 +28,7 @@ class _AkunPageState extends State<AkunPage> {
       MaterialPageRoute(builder: (_) => AkunForm(akun: akun)),
     );
     if (changed == true && mounted) {
-      setState(() {}); // rebuild -> getList() dipanggil ulang
+      setState(() {});
     }
   }
 
@@ -78,212 +78,232 @@ class _AkunPageState extends State<AkunPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true, // 🔴 KUNCI APPBAR TRANSPARAN
       drawer: const Sidebar(),
-      backgroundColor: AppColor.backgroundBlue,
+
       appBar: AppBar(
-        backgroundColor: AppColor.backgroundBlue,
-        foregroundColor: AppColor.black,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: AppColor.black,
+        centerTitle: true,
         title: const Text(
           "Manajemen Akun",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        centerTitle: true,
       ),
-      body: StreamBuilder<List<Akun>>(
-        stream: getList(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                snapshot.error.toString(),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          final list = snapshot.data ?? [];
-          if (list.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.group_outlined, size: 72, color: Colors.grey),
-                    SizedBox(height: 12),
-                    Text(
-                      "Belum ada akun",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "Tambahkan akun baru dengan tombol + di kanan bawah.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
 
-          // filter berdasarkan keyword
-          final lower = _keyword.toLowerCase();
-          final filtered = lower.isEmpty
-              ? list
-              : list.where((a) {
-                  final nama = a.nama.toLowerCase();
-                  final username = a.username.toLowerCase();
-                  final role = a.role.toLowerCase();
-                  return nama.contains(lower) ||
-                      username.contains(lower) ||
-                      role.contains(lower);
-                }).toList();
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColor.backgroundBlue, AppColor.whiteBlue],
+          ),
+        ),
+        child: SafeArea(
+          child: StreamBuilder<List<Akun>>(
+            stream: getList(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    setState(() {
-                      _keyword = val.trim();
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: "Cari nama, username, atau role...",
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Color.fromARGB(255, 222, 235, 247),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 0,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColor.background),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColor.background),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColor.background,
-                        width: 1.4,
-                      ),
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    snapshot.error.toString(),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+
+              final list = snapshot.data ?? [];
+              if (list.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.group_outlined,
+                          size: 72,
+                          color: Colors.grey,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          "Belum ada akun",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "Tambahkan akun baru dengan tombol + di kanan bawah.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
-                  itemCount: filtered.length,
-                  itemBuilder: (ctx, i) {
-                    final a = filtered[i];
+                );
+              }
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: GestureDetector(
-                        onTap: () => _bukaForm(akun: a), // edit
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 222, 235, 247),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: AppColor.background,
-                              width: 1,
-                            ),
+              final lower = _keyword.toLowerCase();
+              final filtered = lower.isEmpty
+                  ? list
+                  : list.where((a) {
+                      return a.nama.toLowerCase().contains(lower) ||
+                          a.username.toLowerCase().contains(lower) ||
+                          a.role.toLowerCase().contains(lower);
+                    }).toList();
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) {
+                        setState(() {
+                          _keyword = val.trim();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Cari nama, username, atau role...",
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 235, 247),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 0,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColor.gray100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  size: 24,
-                                  color: AppColor.grayText,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      a.nama,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "${a.username} • ${a.role.toUpperCase()}",
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () => _hapus(a),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ],
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
+                            width: 1.4,
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 90),
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, i) {
+                        final a = filtered[i];
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: GestureDetector(
+                            onTap: () => _bukaForm(akun: a),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 222, 235, 247),
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.03),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color: AppColor.background,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColor.gray100,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.person_outline,
+                                      size: 24,
+                                      color: AppColor.grayText,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          a.nama,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${a.username} • ${a.role.toUpperCase()}",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  InkWell(
+                                    onTap: () => _hapus(a),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.08),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => _bukaForm(),
         backgroundColor: AppColor.blue,

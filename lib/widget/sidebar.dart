@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
+
 import '../helpers/user_info.dart';
-import '../ui/beranda.dart';
-import '../ui/poli_page.dart';
-import '../ui/pegawai/pegawai_page.dart';
-import '../ui/pasien/pasien_page.dart';
-import '../ui/login.dart';
 import '../ui/akun/akun_page.dart';
+import '../ui/beranda.dart';
 import '../ui/jadwal/jadwal_page.dart';
 import '../ui/kunjungan/kunjungan_page.dart';
+import '../ui/login.dart';
+import '../ui/pasien/pasien_page.dart';
+import '../ui/pegawai/pegawai_page.dart';
+import '../ui/poli_page.dart';
 import '../ui/resep/resep_page.dart';
 
 class Sidebar extends StatefulWidget {
@@ -47,16 +49,19 @@ class _SidebarState extends State<Sidebar> {
     final isDokter = _role.toLowerCase() == 'dokter';
     final isApoteker = _role.toLowerCase() == 'apoteker';
     return Drawer(
+      backgroundColor: AppColor.whiteBlue,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           UserAccountsDrawerHeader(
+            decoration: BoxDecoration(color: AppColor.backgroundBlue),
             accountName: Text(_nama.isEmpty ? 'Pengguna' : _nama),
             accountEmail: Text(
               _role.isEmpty ? 'Role belum diketahui' : _role.toUpperCase(),
             ),
             currentAccountPicture: const CircleAvatar(
-              child: Icon(Icons.person),
+              backgroundColor: AppColor.whiteBlue,
+              child: Icon(Icons.person, color: AppColor.blue),
             ),
           ),
 
