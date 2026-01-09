@@ -74,20 +74,9 @@ class _LoginState extends State<Login> {
               child: Column(
                 children: [
                   /// LOGO
-                  Image.asset('assets/images/tongfang.png', height: 200),
+                  Image.asset('assets/images/tongfang.png', height: 240),
 
                   const SizedBox(height: 16),
-
-                  const Text(
-                    "KLINIK TONGFANG",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColor.blue,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
 
                   const Text(
                     "Silakan login untuk melanjutkan",

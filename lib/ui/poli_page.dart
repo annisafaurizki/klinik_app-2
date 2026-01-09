@@ -34,10 +34,10 @@ class _PoliPageState extends State<PoliPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, // 🔥 BIAR GRADIENT TEMBUS KE APPBAR
+      extendBodyBehindAppBar: true,
 
       appBar: AppBar(
-        backgroundColor: Colors.transparent, // 🔥 transparan
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         foregroundColor: Colors.black,
@@ -87,15 +87,15 @@ class _PoliPageState extends State<PoliPage> {
                   itemCount: data.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    childAspectRatio: 0.85,
                   ),
                   itemBuilder: (context, index) {
                     final poli = data[index];
 
                     return InkWell(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(18),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -106,23 +106,45 @@ class _PoliPageState extends State<PoliPage> {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 222, 235, 247),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColor.white, width: 1),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // ICON CIRCLE
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 56,
+                              height: 56,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColor.backgroundBlue,
+                                    AppColor.whiteBlue,
+                                  ],
+                                ),
                               ),
-                              child: Image.asset(AppImage.kHeartBeat),
+                              child: Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Image.asset(
+                                  AppImage.kHeartBeat,
+                                  color: AppColor.blue,
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 8),
+
+                            const SizedBox(height: 10),
+
+                            // NAMA POLI
                             Text(
                               poli.namaPoli,
                               textAlign: TextAlign.center,

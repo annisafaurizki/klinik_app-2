@@ -58,7 +58,9 @@ class _BerandaState extends State<Beranda> {
     final info = UserInfo();
     final nama = await info.getNama() ?? '';
     final role = await info.getRole() ?? '';
+
     if (!mounted) return;
+
     setState(() {
       _nama = nama;
       _role = role.toLowerCase();
@@ -79,18 +81,6 @@ class _BerandaState extends State<Beranda> {
       jadwal: jadwal.length,
       kunjungan: kunjungan.length,
     );
-  }
-
-  /// =====================
-  /// LOAD KUNJUNGAN DOKTER
-  /// =====================
-  Future<List<Kunjungan>> _loadKunjunganDokter() async {
-    final all = await KunjunganService().listData();
-    final namaDokter = _nama.toLowerCase();
-
-    return all
-        .where((k) => k.dokter.toLowerCase().contains(namaDokter))
-        .toList();
   }
 
   /// =====================
@@ -167,6 +157,8 @@ class _BerandaState extends State<Beranda> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
+        height: double.infinity, // 🔥 background full
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,
@@ -177,213 +169,183 @@ class _BerandaState extends State<Beranda> {
         child: SafeArea(
           child: _role.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
+              : SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// HEADER
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Hi 👋",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  Text(
+                                    _nama,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.help_outline_sharp,
+                              color: AppColor.blue,
+                            ),
+                          ],
                         ),
-                        child: IntrinsicHeight(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                /// HEADER
-                                Row(
+
+                        const SizedBox(height: 16),
+
+                        /// SEARCH
+                        Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (_) => setState(() {}),
+                            onSubmitted: _handleSearch,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              icon: Icon(Icons.search, color: Colors.grey),
+                              hintText: "Cari pasien, poli, dokter, tanggal...",
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        /// WELCOME CARD
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: _welcomeColor(),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            "Hi 👋",
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.black54,
-                                            ),
-                                          ),
-                                          Text(
-                                            _nama,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
+                                    Text(
+                                      "Selamat Datang",
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    const Icon(
-                                      Icons.help_outline_sharp,
-                                      color: AppColor.blue,
+                                    SizedBox(height: 6),
+                                    Text(
+                                      "Cek tugas sebelum bekerja",
+                                      style: TextStyle(fontSize: 13),
                                     ),
                                   ],
                                 ),
+                              ),
+                              _roleLottie(),
+                            ],
+                          ),
+                        ),
 
-                                const SizedBox(height: 16),
+                        const SizedBox(height: 24),
 
-                                /// SEARCH
-                                Container(
-                                  height: 44,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: TextField(
-                                    controller: _searchController,
-                                    onSubmitted: _handleSearch,
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      icon: Icon(
-                                        Icons.search,
-                                        color: Colors.grey,
-                                      ),
-                                      hintText: "Cari menu...",
-                                    ),
-                                  ),
-                                ),
+                        /// =============================
+                        /// KUNJUNGAN DOKTER (SAMA DENGAN KUNJUNGAN PAGE)
+                        /// =============================
+                        if (_role == 'dokter')
+                          FutureBuilder<List<Kunjungan>>(
+                            future: KunjunganService().listData(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
 
-                                const SizedBox(height: 16),
+                              final all = snapshot.data!;
+                              final kw = _searchController.text.toLowerCase();
 
-                                /// WELCOME CARD
-                                Container(
+                              final items = kw.isEmpty
+                                  ? all
+                                  : all.where((k) {
+                                      return k.namaPasien
+                                              .toLowerCase()
+                                              .contains(kw) ||
+                                          k.poli.toLowerCase().contains(kw) ||
+                                          k.dokter.toLowerCase().contains(kw) ||
+                                          k.tanggal.toLowerCase().contains(kw);
+                                    }).toList();
+
+                              if (items.isEmpty) {
+                                return Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: _welcomeColor(),
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Selamat Datang",
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            SizedBox(height: 6),
-                                            Text(
-                                              "Cek tugas sebelum bekerja",
-                                              style: TextStyle(fontSize: 13),
-                                            ),
-                                          ],
-                                        ),
+                                  child: const Text("Belum ada data kunjungan"),
+                                );
+                              }
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Kunjungan Pasien",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...items.map((k) {
+                                    final inisial =
+                                        (k.namaPasien.isNotEmpty
+                                                ? k.namaPasien[0]
+                                                : '?')
+                                            .toUpperCase();
+
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
                                       ),
-                                      _roleLottie(),
-                                    ],
-                                  ),
-                                ),
-
-                                const SizedBox(height: 24),
-
-                                /// STATISTIK (ADMIN & PETUGAS)
-                                if (_role == 'admin' || _role == 'petugas')
-                                  FutureBuilder<_DashboardData>(
-                                    future: _loadDashboard(),
-                                    builder: (context, snap) {
-                                      if (!snap.hasData) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      }
-                                      final d = snap.data!;
-                                      return Wrap(
-                                        spacing: 12,
-                                        runSpacing: 12,
-                                        children: [
-                                          _stat(
-                                            "Pasien",
-                                            d.pasien,
-                                            Icons.people,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromARGB(
+                                            255,
+                                            222,
+                                            235,
+                                            247,
                                           ),
-                                          _stat(
-                                            "Pegawai",
-                                            d.pegawai,
-                                            Icons.badge,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
                                           ),
-                                          _stat(
-                                            "Poli",
-                                            d.poli,
-                                            Icons.local_hospital,
+                                          border: Border.all(
+                                            color: AppColor.background,
                                           ),
-                                          _stat(
-                                            "Jadwal",
-                                            d.jadwal,
-                                            Icons.schedule,
-                                          ),
-                                          _stat(
-                                            "Kunjungan",
-                                            d.kunjungan,
-                                            Icons.assignment,
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-
-                                /// DATA KUNJUNGAN DOKTER
-                                if (_role == 'dokter') ...[
-                                  const SizedBox(height: 24),
-                                  FutureBuilder<List<Kunjungan>>(
-                                    future: _loadKunjunganDokter(),
-                                    builder: (context, snap) {
-                                      if (!snap.hasData) {
-                                        return const Center(
-                                          child: CircularProgressIndicator(),
-                                        );
-                                      }
-
-                                      final list = snap.data!;
-                                      if (list.isEmpty) {
-                                        return Container(
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              16,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            "Belum ada data kunjungan",
-                                          ),
-                                        );
-                                      }
-
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const Text(
-                                            "Kunjungan Pasien",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          ...list.map(
-                                            (k) => Container(
-                                              margin: const EdgeInsets.only(
-                                                bottom: 12,
-                                              ),
-                                              padding: const EdgeInsets.all(14),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(16),
-                                              ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -391,67 +353,51 @@ class _BerandaState extends State<Beranda> {
                                                   Text(
                                                     k.namaPasien,
                                                     style: const TextStyle(
-                                                      fontSize: 15,
+                                                      fontSize: 16,
                                                       fontWeight:
-                                                          FontWeight.bold,
+                                                          FontWeight.w600,
                                                     ),
                                                   ),
                                                   const SizedBox(height: 6),
-                                                  Text("Poli: ${k.poli}"),
-                                                  Text("Tanggal: ${k.tanggal}"),
-                                                  Text("Keluhan: ${k.keluhan}"),
                                                   Text(
-                                                    "Diagnosa: ${k.diagnosa}",
+                                                    "${k.poli} - ${k.dokter}",
                                                   ),
+                                                  Text("Tanggal: ${k.tanggal}"),
                                                 ],
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
+                                            Container(
+                                              width: 52,
+                                              height: 52,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: AppColor.gray100,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                inisial,
+                                                style: const TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            const Icon(Icons.chevron_right),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
                                 ],
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _stat(String title, int value, IconData icon) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 44) / 2,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColor.blue),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 12)),
-                Text(
-                  value.toString(),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ],
         ),
       ),
     );
