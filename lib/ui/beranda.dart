@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
+import 'package:lottie/lottie.dart';
 
-import '../app/constants/app_color.dart'; // pastikan sudah ada AppColor
 import '../helpers/user_info.dart';
 import '../model/kunjungan.dart';
 import '../service/jadwal_service.dart';
@@ -8,27 +9,35 @@ import '../service/kunjungan_service.dart';
 import '../service/pasien_service.dart';
 import '../service/pegawai_service.dart';
 import '../service/poli_service.dart';
-import '../widget/sidebar.dart';
+// halaman tujuan (aksi cepat)
+import 'akun/akun_page.dart';
+import 'pegawai/pegawai_page.dart';
+import 'poli_page.dart';
 
-/// ---- MODEL DATA DASHBOARD (TOP LEVEL, DI LUAR STATE) ----
+/// =====================
+/// MODEL DASHBOARD
+/// =====================
 class _DashboardData {
-  final int totalPoli;
-  final int totalPegawai;
-  final int totalPasien;
-  final int totalJadwal;
-  final int totalKunjungan;
-  final int kunjunganHariIni;
+  final int poli;
+  final int pegawai;
+  final int pasien;
+  final int jadwal;
+  final int kunjungan;
+  final int hariIni;
 
   _DashboardData({
-    required this.totalPoli,
-    required this.totalPegawai,
-    required this.totalPasien,
-    required this.totalJadwal,
-    required this.totalKunjungan,
-    required this.kunjunganHariIni,
+    required this.poli,
+    required this.pegawai,
+    required this.pasien,
+    required this.jadwal,
+    required this.kunjungan,
+    required this.hariIni,
   });
 }
 
+/// =====================
+/// BERANDA
+/// =====================
 class Beranda extends StatefulWidget {
   const Beranda({super.key});
 
@@ -53,7 +62,7 @@ class _BerandaState extends State<Beranda> {
     if (!mounted) return;
     setState(() {
       _nama = nama;
-      _role = role;
+      _role = role.toLowerCase();
     });
   }
 
@@ -78,333 +87,298 @@ class _BerandaState extends State<Beranda> {
     }
 
     return _DashboardData(
-      totalPoli: poli.length,
-      totalPegawai: pegawai.length,
-      totalPasien: pasien.length,
-      totalJadwal: jadwal.length,
-      totalKunjungan: kunjungan.length,
-      kunjunganHariIni: hariIni,
+      poli: poli.length,
+      pegawai: pegawai.length,
+      pasien: pasien.length,
+      jadwal: jadwal.length,
+      kunjungan: kunjungan.length,
+      hariIni: hariIni,
+    );
+  }
+
+  /// =====================
+  /// DUMMY LOTTIE PER ROLE
+  /// =====================
+  Widget _roleLottie() {
+    return SizedBox(
+      height: 120,
+      width: 120,
+      child: Lottie.asset(
+        'assets/lottie/doctor.json',
+        fit: BoxFit.contain,
+        repeat: true,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final roleLower = _role.toLowerCase();
-
     return Scaffold(
-      drawer: const Sidebar(),
-
-      // body ditarik sampai belakang AppBar
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
-
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
-      ),
-
-      body: _role.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : (roleLower == 'admin'
-                ? _buildAdminDashboard()
-                : _buildNonAdminHome()),
-    );
-  }
-
-  // =======================
-  //      ADMIN DASHBOARD
-  // =======================
-
-  Widget _buildAdminDashboard() {
-    return SizedBox.expand(
-      child: Container(
-        decoration: BoxDecoration(
+      body: Container(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topRight, // biru dari kanan atas
-            end: Alignment.bottomLeft, // lightBlue ke kiri bawah
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
             colors: [AppColor.backgroundBlue, AppColor.whiteBlue],
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: FutureBuilder<_DashboardData>(
-              future: _loadDashboard(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      "Gagal memuat dashboard:\n${snapshot.error}",
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }
-
-                final data = snapshot.data!;
-
-                return SingleChildScrollView(
+          child: _role.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Selamat datang, ${_nama.isEmpty ? 'Admin' : _nama}",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Ringkasan aktivitas klinik hari ini",
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                      ),
-                      const SizedBox(height: 16),
-
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                      // ================= HEADER =================
+                      Row(
                         children: [
-                          _statCard(
-                            title: "Total Pasien",
-                            value: data.totalPasien,
-                            icon: Icons.person,
-                            color: Colors.blue,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Hi 👋",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                Text(
+                                  _nama,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          _statCard(
-                            title: "Total Pegawai",
-                            value: data.totalPegawai,
-                            icon: Icons.badge,
-                            color: Colors.orange,
-                          ),
-                          _statCard(
-                            title: "Total Poli",
-                            value: data.totalPoli,
-                            icon: Icons.local_hospital,
-                            color: Colors.green,
-                          ),
-                          _statCard(
-                            title: "Jadwal Dokter",
-                            value: data.totalJadwal,
-                            icon: Icons.schedule,
-                            color: Colors.purple,
-                          ),
-                          _statCard(
-                            title: "Kunjungan Hari Ini",
-                            value: data.kunjunganHariIni,
-                            icon: Icons.today,
-                            color: Colors.red,
-                          ),
-                          _statCard(
-                            title: "Total Kunjungan",
-                            value: data.totalKunjungan,
-                            icon: Icons.assignment,
-                            color: Colors.teal,
+                          InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text("Bantuan"),
+                                  content: const Text(
+                                    "Jika bermasalah silahkan hubungi\n081297635363",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text("Tutup"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.transparent,
+                              child: Icon(
+                                Icons.help_outline_sharp,
+                                color: AppColor.blue,
+                              ),
+                            ),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
 
+                      // ================= SEARCH BAR (DUMMY) =================
+                      Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.search, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text(
+                              "Cari menu...",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ================= WELCOME CARD =================
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Selamat Datang",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    "Cek tugas sebelum bekerja",
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _roleLottie(),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ================= STATISTIK =================
+                      FutureBuilder<_DashboardData>(
+                        future: _loadDashboard(),
+                        builder: (context, snap) {
+                          if (!snap.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          final d = snap.data!;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              _stat("Pasien", d.pasien, Icons.people),
+                              _stat("Pegawai", d.pegawai, Icons.badge),
+                              _stat("Poli", d.poli, Icons.local_hospital),
+                              _stat("Jadwal", d.jadwal, Icons.schedule),
+                              _stat("Hari Ini", d.hariIni, Icons.today),
+                              _stat("Kunjungan", d.kunjungan, Icons.assignment),
+                            ],
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 28),
+
+                      // ================= AKSI CEPAT =================
                       const Text(
-                        "Statistik Kunjungan",
+                        "Aksi Cepat",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 12),
 
-                      _simpleBar(
-                        label: "Hari ini",
-                        value: data.kunjunganHariIni,
-                        max: (data.totalKunjungan == 0)
-                            ? 1
-                            : data.totalKunjungan,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 8),
-
-                      _simpleBar(
-                        label: "Total",
-                        value: data.totalKunjungan,
-                        max: (data.totalKunjungan == 0)
-                            ? 1
-                            : data.totalKunjungan,
-                        color: Colors.teal,
+                      Row(
+                        children: [
+                          _quickAction(
+                            "Pegawai",
+                            Icons.people,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PegawaiPage(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _quickAction(
+                            "Poli",
+                            Icons.local_hospital,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PoliPage(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _quickAction(
+                            "Akun",
+                            Icons.manage_accounts,
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AkunPage(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
+                ),
         ),
       ),
     );
   }
 
-  Widget _statCard({
-    required String title,
-    required int value,
-    required IconData icon,
-    required Color color,
-  }) {
+  // ================= STAT CARD =================
+  Widget _stat(String title, int value, IconData icon) {
     return SizedBox(
-      width: (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2,
-      child: Card(
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: color.withOpacity(0.1),
-                foregroundColor: color,
-                child: Icon(icon),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.black54,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      value.toString(),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+      width: (MediaQuery.of(context).size.width - 44) / 2,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
         ),
-      ),
-    );
-  }
-
-  // BAR SEDERHANA
-  Widget _simpleBar({
-    required String label,
-    required int value,
-    required int max,
-    required Color color,
-  }) {
-    final width = MediaQuery.of(context).size.width - 32;
-    final ratio = (max == 0) ? 0.0 : (value / max);
-    final barWidth = width * ratio.clamp(0.0, 1.0);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("$label: $value"),
-        const SizedBox(height: 4),
-        Stack(
+        child: Row(
           children: [
-            Container(
-              height: 12,
-              width: width,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: 12,
-              width: barWidth,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // =========================
-  //  HOME UNTUK NON ADMIN
-  // =========================
-
-  Widget _buildNonAdminHome() {
-    final isDokter = _role.toLowerCase() == 'dokter';
-    final isPetugas = _role.toLowerCase() == 'petugas';
-    final isApoteker = _role.toLowerCase() == 'apoteker';
-
-    String desc;
-    if (isDokter) {
-      desc =
-          "Anda login sebagai Dokter.\nSilakan gunakan menu Kunjungan dan Jadwal untuk mengelola pasien.";
-    } else if (isPetugas) {
-      desc =
-          "Anda login sebagai Petugas.\nGunakan menu Pasien, Kunjungan, dan Jadwal untuk pelayanan front office.";
-    } else if (isApoteker) {
-      desc =
-          "Anda login sebagai Apoteker.\nGunakan menu Resep Elektronik untuk memproses resep dokter.";
-    } else {
-      desc = "Selamat datang di sistem klinik.";
-    }
-
-    // beda background per role non-admin (simple)
-    Color bg;
-    if (isDokter) {
-      bg = AppColor.whiteBlue;
-    } else if (isPetugas) {
-      bg = AppColor.grayField;
-    } else if (isApoteker) {
-      bg = AppColor.greenStatus.withOpacity(0.08);
-    } else {
-      bg = Colors.white;
-    }
-
-    return Container(
-      color: bg,
-      child: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Icon(icon, color: AppColor.blue),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.local_hospital,
-                  size: 72,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
+                Text(title, style: const TextStyle(fontSize: 12)),
                 Text(
-                  "Halo, ${_nama.isEmpty ? 'Pengguna' : _nama}",
+                  value.toString(),
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  desc,
-                  style: const TextStyle(fontSize: 14),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= QUICK ACTION =================
+  Widget _quickAction(String label, IconData icon, VoidCallback onTap) {
+    return Expanded(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: AppColor.blue),
+              const SizedBox(height: 6),
+              Text(label, style: const TextStyle(fontSize: 13)),
+            ],
           ),
         ),
       ),

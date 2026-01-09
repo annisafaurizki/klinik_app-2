@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
+
 import '../../model/jadwal.dart';
 import '../../service/jadwal_service.dart';
-import '../../widget/sidebar.dart';
-import 'jadwal_form.dart';
 import 'jadwal_detail.dart';
+import 'jadwal_form.dart';
 
 class JadwalPage extends StatefulWidget {
   const JadwalPage({super.key});
@@ -13,7 +14,9 @@ class JadwalPage extends StatefulWidget {
 }
 
 class _JadwalPageState extends State<JadwalPage> {
-  // ambil list jadwal dari API
+  final TextEditingController _searchController = TextEditingController();
+  String _keyword = '';
+
   Stream<List<Jadwal>> getList() async* {
     final data = await JadwalService().listData();
     yield data;
@@ -22,72 +25,171 @@ class _JadwalPageState extends State<JadwalPage> {
   Future<void> _bukaFormTambah() async {
     final changed = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        // ❗ DI SINI TIDAK ADA `jadwal: ...`
-        builder: (_) => const JadwalForm(),
-      ),
+      MaterialPageRoute(builder: (_) => const JadwalForm()),
     );
     if (changed == true && mounted) {
-      setState(() {}); // refresh list setelah ada perubahan
+      setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const Sidebar(),
+      extendBodyBehindAppBar: true,
+
       appBar: AppBar(
-        title: const Text("Jadwal Dokter"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        foregroundColor: AppColor.black,
+        title: const Text(
+          "Jadwal Dokter",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _bukaFormTambah),
         ],
       ),
-      body: StreamBuilder<List<Jadwal>>(
-        stream: getList(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          }
 
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              snapshot.connectionState == ConnectionState.active) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColor.backgroundBlue, AppColor.whiteBlue],
+          ),
+        ),
+        child: SafeArea(
+          child: StreamBuilder<List<Jadwal>>(
+            stream: getList(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text(snapshot.error.toString()));
+              }
 
-          final list = snapshot.data ?? [];
-          if (list.isEmpty) {
-            return const Center(child: Text("Belum ada jadwal dokter"));
-          }
+              if (snapshot.connectionState == ConnectionState.waiting ||
+                  snapshot.connectionState == ConnectionState.active) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          return ListView.builder(
-            itemCount: list.length,
-            itemBuilder: (ctx, i) {
-              final j = list[i];
-              return Card(
-                child: ListTile(
-                  title: Text("${j.namaDokter} - ${j.poli}"),
-                  subtitle: Text("${j.hari}, ${j.jamMulai} - ${j.jamSelesai}"),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final changed = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => JadwalDetail(jadwal: j),
+              final list = snapshot.data ?? [];
+              if (list.isEmpty) {
+                return const Center(child: Text("Belum ada jadwal dokter"));
+              }
+
+              final kw = _keyword.toLowerCase();
+              final filtered = kw.isEmpty
+                  ? list
+                  : list.where((j) {
+                      return j.namaDokter.toLowerCase().contains(kw) ||
+                          j.poli.toLowerCase().contains(kw) ||
+                          j.hari.toLowerCase().contains(kw);
+                    }).toList();
+
+              return Column(
+                children: [
+                  // 🔍 SEARCH BAR
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) {
+                        setState(() {
+                          _keyword = val.trim();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Cari dokter, poli, atau hari...",
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: const Color.fromARGB(255, 222, 235, 247),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 0,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppColor.background,
+                            width: 1.4,
+                          ),
+                        ),
                       ),
-                    );
-                    if (changed == true && mounted) {
-                      setState(() {}); // refresh setelah ubah/hapus
-                    }
-                  },
-                ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // 📋 LIST JADWAL (PAKAI BORDER)
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, i) {
+                        final j = filtered[i];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 222, 235, 247),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColor
+                                  .background, // 🔥 SAMA KAYAK SEARCH BAR
+                              width: 1,
+                            ),
+                          ),
+                          child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            title: Text(
+                              "${j.namaDokter} - ${j.poli}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "${j.hari}, ${j.jamMulai} - ${j.jamSelesai}",
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              final changed = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => JadwalDetail(jadwal: j),
+                                ),
+                              );
+                              if (changed == true && mounted) {
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _bukaFormTambah,
-        child: const Icon(Icons.add),
+          ),
+        ),
       ),
     );
   }

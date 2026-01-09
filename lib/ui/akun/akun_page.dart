@@ -3,7 +3,6 @@ import 'package:klinik_app/app/constants/app_color.dart';
 
 import '../../model/akun.dart';
 import '../../service/akun_service.dart';
-import '../../widget/sidebar.dart';
 import 'akun_form.dart';
 
 class AkunPage extends StatefulWidget {
@@ -79,7 +78,6 @@ class _AkunPageState extends State<AkunPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true, // 🔴 KUNCI APPBAR TRANSPARAN
-      drawer: const Sidebar(),
 
       appBar: AppBar(
         backgroundColor: Colors.transparent,

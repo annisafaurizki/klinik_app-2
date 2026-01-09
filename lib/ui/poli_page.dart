@@ -5,7 +5,6 @@ import 'package:klinik_app/ui/poli_detail.dart';
 
 import '../model/poli.dart';
 import '../service/poli_service.dart';
-import '../widget/sidebar.dart';
 import 'poli_form.dart';
 
 class PoliPage extends StatefulWidget {
@@ -36,7 +35,6 @@ class _PoliPageState extends State<PoliPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true, // 🔥 BIAR GRADIENT TEMBUS KE APPBAR
-      drawer: const Sidebar(),
 
       appBar: AppBar(
         backgroundColor: Colors.transparent, // 🔥 transparan

@@ -55,9 +55,13 @@ class _SidebarState extends State<Sidebar> {
         children: [
           UserAccountsDrawerHeader(
             decoration: BoxDecoration(color: AppColor.backgroundBlue),
-            accountName: Text(_nama.isEmpty ? 'Pengguna' : _nama),
+            accountName: Text(
+              _nama.isEmpty ? 'Pengguna' : _nama,
+              style: TextStyle(color: AppColor.grayText),
+            ),
             accountEmail: Text(
               _role.isEmpty ? 'Role belum diketahui' : _role.toUpperCase(),
+              style: TextStyle(color: AppColor.grayText),
             ),
             currentAccountPicture: const CircleAvatar(
               backgroundColor: AppColor.whiteBlue,

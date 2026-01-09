@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
+
 import '../../model/jadwal.dart';
 import '../../service/jadwal_service.dart';
 
@@ -46,7 +48,6 @@ class _JadwalUpdateFormState extends State<JadwalUpdateForm> {
   Future<void> _simpan() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // buat objek jadwal baru dari input form
     final updated = Jadwal(
       id: widget.jadwal.id,
       namaDokter: _namaDokterCtrl.text.trim(),
@@ -67,133 +68,149 @@ class _JadwalUpdateFormState extends State<JadwalUpdateForm> {
     await JadwalService().ubah(updated, id);
 
     if (!mounted) return;
-    // kirim data yang sudah di-update balik ke halaman sebelumnya
     Navigator.pop(context, updated);
   }
 
-  // ---------- FIELD-FIELD FORM ----------
+  // ===== STYLE FIELD SAMA DENGAN JADWAL FORM =====
+  OutlineInputBorder _border(Color color) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: BorderSide(color: color, width: 1),
+  );
 
-  Widget _fieldNamaDokter() {
-    return TextFormField(
-      controller: _namaDokterCtrl,
-      decoration: const InputDecoration(
-        labelText: "Nama Dokter",
-        border: OutlineInputBorder(),
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    bool readOnly = false,
+    VoidCallback? onTap,
+    Widget? suffixIcon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        validator: _req,
+        onTap: onTap,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: const Color.fromARGB(255, 222, 235, 247),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          suffixIcon: suffixIcon,
+          border: _border(AppColor.background),
+          enabledBorder: _border(AppColor.background),
+          focusedBorder: _border(AppColor.blue),
+        ),
       ),
-      validator: _req,
-    );
-  }
-
-  Widget _fieldPoli() {
-    return TextFormField(
-      controller: _poliCtrl,
-      decoration: const InputDecoration(
-        labelText: "Poli",
-        border: OutlineInputBorder(),
-      ),
-      validator: _req,
-    );
-  }
-
-  Widget _fieldHari() {
-    return TextFormField(
-      controller: _hariCtrl,
-      decoration: const InputDecoration(
-        labelText: "Hari (contoh: Senin)",
-        border: OutlineInputBorder(),
-      ),
-      validator: _req,
     );
   }
 
   Widget _fieldJamMulai() {
-    return TextFormField(
-      controller: _jamMulaiCtrl,
+    return _field(
+      _jamMulaiCtrl,
+      "Jam Mulai",
       readOnly: true,
-      decoration: const InputDecoration(
-        labelText: "Jam Mulai",
-        border: OutlineInputBorder(),
-        suffixIcon: Icon(Icons.access_time),
-      ),
+      suffixIcon: const Icon(Icons.access_time),
       onTap: () async {
         final picked = await showTimePicker(
           context: context,
           initialTime: TimeOfDay.now(),
           helpText: "Pilih Jam Mulai",
         );
-
         if (picked != null) {
           final formatted =
               "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
-
           setState(() => _jamMulaiCtrl.text = formatted);
         }
       },
-      validator: _req,
     );
   }
 
   Widget _fieldJamSelesai() {
-    return TextFormField(
-      controller: _jamSelesaiCtrl,
+    return _field(
+      _jamSelesaiCtrl,
+      "Jam Selesai",
       readOnly: true,
-      decoration: const InputDecoration(
-        labelText: "Jam Selesai",
-        border: OutlineInputBorder(),
-        suffixIcon: Icon(Icons.access_time),
-      ),
+      suffixIcon: const Icon(Icons.access_time),
       onTap: () async {
         final picked = await showTimePicker(
           context: context,
           initialTime: TimeOfDay.now(),
           helpText: "Pilih Jam Selesai",
         );
-
         if (picked != null) {
           final formatted =
               "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
-
           setState(() => _jamSelesaiCtrl.text = formatted);
         }
       },
-      validator: _req,
     );
   }
-
-  Widget _tombolSimpan() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _simpan,
-        child: const Text("Simpan Perubahan"),
-      ),
-    );
-  }
-
-  // ---------- BUILD ----------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ubah Jadwal Dokter")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _fieldNamaDokter(),
-              const SizedBox(height: 12),
-              _fieldPoli(),
-              const SizedBox(height: 12),
-              _fieldHari(),
-              const SizedBox(height: 12),
-              _fieldJamMulai(),
-              const SizedBox(height: 12),
-              _fieldJamSelesai(),
-              const SizedBox(height: 20),
-              _tombolSimpan(),
-            ],
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColor.black,
+        title: const Text(
+          "Ubah Jadwal Dokter",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColor.backgroundBlue, AppColor.backgroundBlue],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  _field(_namaDokterCtrl, "Nama Dokter"),
+                  _field(_poliCtrl, "Poli"),
+                  _field(_hariCtrl, "Hari"),
+                  _fieldJamMulai(),
+                  _fieldJamSelesai(),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _simpan,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColor.blue,
+                        foregroundColor: AppColor.background,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Simpan Perubahan",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

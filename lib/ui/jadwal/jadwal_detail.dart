@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
+
+import '../../helpers/user_info.dart';
 import '../../model/jadwal.dart';
 import '../../service/jadwal_service.dart';
-import '../../helpers/user_info.dart';
-import 'jadwal_update_form.dart';
 import 'jadwal_page.dart';
+import 'jadwal_update_form.dart';
 
 class JadwalDetail extends StatefulWidget {
   final Jadwal jadwal;
@@ -29,9 +31,7 @@ class _JadwalDetailState extends State<JadwalDetail> {
     final info = UserInfo();
     final r = await info.getRole() ?? '';
     if (!mounted) return;
-    setState(() {
-      _role = r.toLowerCase();
-    });
+    setState(() => _role = r.toLowerCase());
   }
 
   bool get _canManage => _role == 'admin' || _role == 'petugas';
@@ -41,10 +41,51 @@ class _JadwalDetailState extends State<JadwalDetail> {
     yield data;
   }
 
+  // === FIELD STYLE SAMA KAYAK PEGAWAI DETAIL ===
+  Widget _infoField(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColor.gray200,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColor.background, width: 1),
+            ),
+            child: Text(value, style: const TextStyle(fontSize: 14)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Detail Jadwal Dokter")),
+      backgroundColor: AppColor.backgroundBlue,
+      appBar: AppBar(
+        backgroundColor: AppColor.backgroundBlue,
+        elevation: 0,
+        foregroundColor: AppColor.black,
+        centerTitle: true,
+        title: const Text(
+          "Detail Jadwal Dokter",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
       body: StreamBuilder<Jadwal>(
         stream: _stream,
         builder: (context, snapshot) {
@@ -60,107 +101,135 @@ class _JadwalDetailState extends State<JadwalDetail> {
 
           final j = snapshot.data!;
 
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Nama Dokter : ${j.namaDokter}",
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Poli        : ${j.poli}",
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Hari        : ${j.hari}",
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Jam         : ${j.jamMulai} - ${j.jamSelesai}",
-                  style: const TextStyle(fontSize: 18),
-                ),
-                const SizedBox(height: 24),
-
-                // tombol hanya muncul kalau admin/petugas
-                if (_canManage)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        child: const Text("Ubah"),
-                        onPressed: () async {
-                          final updated = await Navigator.push<Jadwal>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => JadwalUpdateForm(jadwal: j),
-                            ),
-                          );
-                          if (updated != null && mounted) {
-                            setState(() {
-                              _stream = getData(); // refresh data
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Data berhasil diubah"),
-                              ),
-                            );
-                          }
-                        },
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              child: Column(
+                children: [
+                  // ===== CARD DETAIL JADWAL =====
+                  Card(
+                    color: AppColor.whiteBlue,
+                    elevation: 1.5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 18,
                       ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        child: const Text("Hapus"),
-                        onPressed: () async {
-                          final ok = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("Konfirmasi"),
-                              content: const Text(
-                                "Yakin ingin menghapus jadwal ini?",
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text("Batal"),
-                                ),
-                                ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                  ),
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text("Hapus"),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (ok == true) {
-                            await JadwalService().hapus(j);
-                            if (!mounted) return;
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const JadwalPage(),
-                              ),
-                              (route) => false,
-                            );
-                          }
-                        },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoField("Nama Dokter", j.namaDokter),
+                          _infoField("Poli", j.poli),
+                          _infoField("Hari", j.hari),
+                          _infoField(
+                            "Jam Praktik",
+                            "${j.jamMulai} - ${j.jamSelesai}",
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-              ],
+
+                  const SizedBox(height: 28),
+
+                  // ===== TOMBOL (SAMA KAYAK PEGAWAI) =====
+                  if (_canManage)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.mediumBlue,
+                                foregroundColor: AppColor.background,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: () async {
+                                final updated = await Navigator.push<Jadwal>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => JadwalUpdateForm(jadwal: j),
+                                  ),
+                                );
+                                if (updated != null && mounted) {
+                                  setState(() => _stream = getData());
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Data berhasil diubah"),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text('Ubah'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.redColor,
+                                foregroundColor: AppColor.background,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: () async {
+                                final ok = await showDialog<bool>(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text("Konfirmasi"),
+                                    content: const Text(
+                                      "Yakin ingin menghapus jadwal ini?",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text("Batal"),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColor.redColor,
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text("Hapus"),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (ok == true) {
+                                  await JadwalService().hapus(j);
+                                  if (!mounted) return;
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const JadwalPage(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                              child: const Text('Hapus'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           );
         },

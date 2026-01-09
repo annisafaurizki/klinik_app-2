@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klinik_app/service/login_service.dart';
-import 'package:klinik_app/ui/beranda.dart';
+import 'package:klinik_app/widget/bottom_nav.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -34,7 +34,7 @@ class _LoginState extends State<Login> {
     if (isOk) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const Beranda()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } else {
       showDialog(
