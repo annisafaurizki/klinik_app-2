@@ -19,9 +19,6 @@ import '../service/pasien_service.dart';
 import '../service/pegawai_service.dart';
 import '../service/poli_service.dart';
 
-/// =====================
-/// MODEL DASHBOARD
-/// =====================
 class _DashboardData {
   final int poli;
   final int pegawai;
@@ -40,9 +37,6 @@ class _DashboardData {
   });
 }
 
-/// =====================
-/// AKTIVITAS PAGE
-/// =====================
 class AktivitasPage extends StatefulWidget {
   const AktivitasPage({super.key});
 
@@ -61,7 +55,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
     _loadUser();
   }
 
-  /// 🔄 AUTO REFRESH SETIAP MASUK HALAMAN
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -79,9 +72,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
     });
   }
 
-  /// =====================
-  /// LOAD STATISTIK DARI API
-  /// =====================
   Future<_DashboardData> _loadDashboard() async {
     final poli = await PoliService().listData();
     final pegawai = await PegawaiService().listData();
@@ -113,7 +103,7 @@ class _AktivitasPageState extends State<AktivitasPage> {
   }
 
   /// =====================
-  /// MENU GRID
+  /// MENU GRID (ROLE FIXED)
   /// =====================
   List<_MenuItem> _menus() {
     final isAdmin = _role == 'admin';
@@ -123,17 +113,32 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
     final List<_MenuItem> items = [];
 
+    // Semua role
     items.add(_MenuItem("Data Pasien", const PasienPage()));
+    items.add(_MenuItem("Jadwal", const JadwalPage()));
 
-    if (isAdmin) items.add(_MenuItem("Akun", const AkunPage()));
-    if (isAdmin || isPetugas) {
+    // Admin
+    if (isAdmin) {
+      items.add(_MenuItem("Akun", const AkunPage()));
       items.add(_MenuItem("Data Poli", const PoliPage()));
       items.add(_MenuItem("Pegawai", const PegawaiPage()));
     }
-    if (isDokter) items.add(_MenuItem("Kunjungan", const KunjunganPage()));
-    if (isApoteker) items.add(_MenuItem("Resep", const ResepPage()));
 
-    items.add(_MenuItem("Jadwal", const JadwalPage()));
+    // Petugas
+    if (isPetugas) {
+      items.add(_MenuItem("Data Poli", const PoliPage()));
+      items.add(_MenuItem("Pegawai", const PegawaiPage()));
+    }
+
+    // Dokter
+    if (isDokter) {
+      items.add(_MenuItem("Kunjungan", const KunjunganPage()));
+    }
+
+    // Apoteker
+    if (isApoteker) {
+      items.add(_MenuItem("Resep", const ResepPage()));
+    }
 
     return items;
   }
@@ -162,6 +167,9 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       /// SEARCH BAR
                       TextField(
                         controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {});
+                        },
                         decoration: InputDecoration(
                           hintText: "Cari menu atau informasi...",
                           prefixIcon: const Icon(Icons.search),
@@ -176,18 +184,15 @@ class _AktivitasPageState extends State<AktivitasPage> {
 
                       const SizedBox(height: 20),
 
-                      /// RINGKASAN STATISTIK
+                      /// STATISTIK
                       FutureBuilder<_DashboardData>(
                         future: _loadDashboard(),
                         builder: (context, snap) {
-                          if (!snap.hasData) {
-                            return const SizedBox();
-                          }
+                          if (!snap.hasData) return const SizedBox();
                           final d = snap.data!;
                           return Row(
                             children: [
                               _miniStat("Pasien", d.pasien),
-                              _miniStat("Hari Ini", d.hariIni),
                               _miniStat("Jadwal", d.jadwal),
                             ],
                           );
@@ -197,68 +202,78 @@ class _AktivitasPageState extends State<AktivitasPage> {
                       const SizedBox(height: 28),
 
                       /// GRID MENU
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _menus().length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.85,
-                            ),
-                        itemBuilder: (context, i) {
-                          final m = _menus()[i];
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => m.page),
-                              );
-                              setState(() {}); // 🔄 refresh setelah balik
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
+                      Builder(
+                        builder: (context) {
+                          final keyword = _searchController.text.toLowerCase();
+
+                          final filteredMenus = _menus().where((m) {
+                            return m.title.toLowerCase().contains(keyword);
+                          }).toList();
+
+                          return GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredMenus.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 0.85,
+                                ),
+                            itemBuilder: (context, i) {
+                              final m = filteredMenus[i];
+                              return InkWell(
                                 borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.08),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => m.page),
+                                  );
+                                  setState(() {});
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.local_hospital,
-                                    size: 28,
-                                    color: AppColor.blue,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.local_hospital,
+                                        size: 28,
+                                        color: AppColor.blue,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        m.title,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    m.title,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
                           );
                         },
                       ),
 
                       const SizedBox(height: 32),
 
-                      /// CAROUSEL BACaan (ADMIN & DOKTER)
+                      /// CAROUSEL (ADMIN & DOKTER)
                       if (_showCarousel) ...[
                         const Align(
                           alignment: Alignment.centerLeft,
@@ -273,72 +288,81 @@ class _AktivitasPageState extends State<AktivitasPage> {
                         const SizedBox(height: 12),
                         CarouselSlider(
                           options: CarouselOptions(
-                            height: 160,
+                            height: 180,
                             autoPlay: true,
                             enlargeCenterPage: true,
+                            viewportFraction: 0.85,
                           ),
                           items: bacaanList.map((b) {
                             return InkWell(
                               onTap: () async {
                                 final uri = Uri.parse(b.link);
                                 if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri);
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
                                 }
                               },
                               child: Container(
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 6,
                                 ),
-                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(18),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 6),
                                     ),
                                   ],
                                 ),
                                 child: Row(
                                   children: [
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(18),
+                                        bottomLeft: Radius.circular(18),
+                                      ),
                                       child: Image.asset(
                                         b.gambar,
-                                        width: 80,
-                                        height: 100,
+                                        width: 110,
+                                        height: double.infinity,
                                         fit: BoxFit.cover,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
                                     Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            b.judul,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(14),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              b.judul,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            b.deskripsi,
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: const TextStyle(
-                                              fontSize: 12,
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              b.deskripsi,
+                                              maxLines: 4,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black54,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -358,9 +382,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
     );
   }
 
-  /// =====================
-  /// MINI STAT CARD
-  /// =====================
   Widget _miniStat(String title, int value) {
     return Expanded(
       child: Container(
@@ -395,9 +416,6 @@ class _AktivitasPageState extends State<AktivitasPage> {
   }
 }
 
-/// =====================
-/// MODEL MENU
-/// =====================
 class _MenuItem {
   final String title;
   final Widget page;

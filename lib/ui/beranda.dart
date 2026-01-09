@@ -9,7 +9,7 @@ import '../service/kunjungan_service.dart';
 import '../service/pasien_service.dart';
 import '../service/pegawai_service.dart';
 import '../service/poli_service.dart';
-// halaman tujuan (aksi cepat)
+// halaman tujuan
 import 'akun/akun_page.dart';
 import 'pegawai/pegawai_page.dart';
 import 'poli_page.dart';
@@ -23,7 +23,6 @@ class _DashboardData {
   final int pasien;
   final int jadwal;
   final int kunjungan;
-  final int hariIni;
 
   _DashboardData({
     required this.poli,
@@ -31,7 +30,6 @@ class _DashboardData {
     required this.pasien,
     required this.jadwal,
     required this.kunjungan,
-    required this.hariIni,
   });
 }
 
@@ -48,6 +46,7 @@ class Beranda extends StatefulWidget {
 class _BerandaState extends State<Beranda> {
   String _nama = '';
   String _role = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -73,42 +72,95 @@ class _BerandaState extends State<Beranda> {
     final jadwal = await JadwalService().listData();
     final kunjungan = await KunjunganService().listData();
 
-    final now = DateTime.now();
-    int hariIni = 0;
-
-    for (final Kunjungan k in kunjungan) {
-      final t = DateTime.tryParse(k.tanggal);
-      if (t != null &&
-          t.year == now.year &&
-          t.month == now.month &&
-          t.day == now.day) {
-        hariIni++;
-      }
-    }
-
     return _DashboardData(
       poli: poli.length,
       pegawai: pegawai.length,
       pasien: pasien.length,
       jadwal: jadwal.length,
       kunjungan: kunjungan.length,
-      hariIni: hariIni,
     );
   }
 
   /// =====================
-  /// DUMMY LOTTIE PER ROLE
+  /// LOAD KUNJUNGAN DOKTER
+  /// =====================
+  Future<List<Kunjungan>> _loadKunjunganDokter() async {
+    final all = await KunjunganService().listData();
+    final namaDokter = _nama.toLowerCase();
+
+    return all
+        .where((k) => k.dokter.toLowerCase().contains(namaDokter))
+        .toList();
+  }
+
+  /// =====================
+  /// WARNA WELCOME CARD
+  /// =====================
+  Color _welcomeColor() {
+    switch (_role) {
+      case 'dokter':
+        return const Color(0xFFFFE4EC);
+      case 'apoteker':
+        return const Color(0xFFE6F6EA);
+      case 'petugas':
+        return const Color(0xFFFFF5CC);
+      default:
+        return Colors.white;
+    }
+  }
+
+  /// =====================
+  /// LOTTIE PER ROLE
   /// =====================
   Widget _roleLottie() {
+    String asset;
+    switch (_role) {
+      case 'dokter':
+        asset = 'assets/lottie/dokter.json';
+        break;
+      case 'apoteker':
+        asset = 'assets/lottie/apoteker.json';
+        break;
+      case 'petugas':
+        asset = 'assets/lottie/petugas.json';
+        break;
+      default:
+        asset = 'assets/lottie/admin.json';
+    }
+
     return SizedBox(
       height: 120,
       width: 120,
-      child: Lottie.asset(
-        'assets/lottie/doctor.json',
-        fit: BoxFit.contain,
-        repeat: true,
-      ),
+      child: Lottie.asset(asset, fit: BoxFit.contain),
     );
+  }
+
+  /// =====================
+  /// SEARCH ACTION
+  /// =====================
+  void _handleSearch(String keyword) {
+    final text = keyword.toLowerCase();
+
+    if (text.contains("pegawai")) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PegawaiPage()),
+      );
+    } else if (text.contains("poli")) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PoliPage()),
+      );
+    } else if (text.contains("akun")) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AkunPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Menu tidak ditemukan")));
+    }
   }
 
   @override
@@ -125,209 +177,254 @@ class _BerandaState extends State<Beranda> {
         child: SafeArea(
           child: _role.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ================= HEADER =================
-                      Row(
-                        children: [
-                          Expanded(
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  "Hi 👋",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                Text(
-                                  _nama,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(24),
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => AlertDialog(
-                                  title: const Text("Bantuan"),
-                                  content: const Text(
-                                    "Jika bermasalah silahkan hubungi\n081297635363",
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text("Tutup"),
+                                /// HEADER
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            "Hi 👋",
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                          Text(
+                                            _nama,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.help_outline_sharp,
+                                      color: AppColor.blue,
                                     ),
                                   ],
                                 ),
-                              );
-                            },
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.transparent,
-                              child: Icon(
-                                Icons.help_outline_sharp,
-                                color: AppColor.blue,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
 
-                      const SizedBox(height: 16),
+                                const SizedBox(height: 16),
 
-                      // ================= SEARCH BAR (DUMMY) =================
-                      Container(
-                        height: 44,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text(
-                              "Cari menu...",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // ================= WELCOME CARD =================
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "Selamat Datang",
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
+                                /// SEARCH
+                                Container(
+                                  height: 44,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    onSubmitted: _handleSearch,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      icon: Icon(
+                                        Icons.search,
+                                        color: Colors.grey,
+                                      ),
+                                      hintText: "Cari menu...",
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    "Cek tugas sebelum bekerja",
-                                    style: const TextStyle(fontSize: 13),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                /// WELCOME CARD
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: _welcomeColor(),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Selamat Datang",
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            SizedBox(height: 6),
+                                            Text(
+                                              "Cek tugas sebelum bekerja",
+                                              style: TextStyle(fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      _roleLottie(),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                /// STATISTIK (ADMIN & PETUGAS)
+                                if (_role == 'admin' || _role == 'petugas')
+                                  FutureBuilder<_DashboardData>(
+                                    future: _loadDashboard(),
+                                    builder: (context, snap) {
+                                      if (!snap.hasData) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      final d = snap.data!;
+                                      return Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        children: [
+                                          _stat(
+                                            "Pasien",
+                                            d.pasien,
+                                            Icons.people,
+                                          ),
+                                          _stat(
+                                            "Pegawai",
+                                            d.pegawai,
+                                            Icons.badge,
+                                          ),
+                                          _stat(
+                                            "Poli",
+                                            d.poli,
+                                            Icons.local_hospital,
+                                          ),
+                                          _stat(
+                                            "Jadwal",
+                                            d.jadwal,
+                                            Icons.schedule,
+                                          ),
+                                          _stat(
+                                            "Kunjungan",
+                                            d.kunjungan,
+                                            Icons.assignment,
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+
+                                /// DATA KUNJUNGAN DOKTER
+                                if (_role == 'dokter') ...[
+                                  const SizedBox(height: 24),
+                                  FutureBuilder<List<Kunjungan>>(
+                                    future: _loadKunjunganDokter(),
+                                    builder: (context, snap) {
+                                      if (!snap.hasData) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+
+                                      final list = snap.data!;
+                                      if (list.isEmpty) {
+                                        return Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            "Belum ada data kunjungan",
+                                          ),
+                                        );
+                                      }
+
+                                      return Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            "Kunjungan Pasien",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          ...list.map(
+                                            (k) => Container(
+                                              margin: const EdgeInsets.only(
+                                                bottom: 12,
+                                              ),
+                                              padding: const EdgeInsets.all(14),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    k.namaPasien,
+                                                    style: const TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text("Poli: ${k.poli}"),
+                                                  Text("Tanggal: ${k.tanggal}"),
+                                                  Text("Keluhan: ${k.keluhan}"),
+                                                  Text(
+                                                    "Diagnosa: ${k.diagnosa}",
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ],
-                              ),
+                              ],
                             ),
-                            _roleLottie(),
-                          ],
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 24),
-
-                      // ================= STATISTIK =================
-                      FutureBuilder<_DashboardData>(
-                        future: _loadDashboard(),
-                        builder: (context, snap) {
-                          if (!snap.hasData) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          final d = snap.data!;
-                          return Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              _stat("Pasien", d.pasien, Icons.people),
-                              _stat("Pegawai", d.pegawai, Icons.badge),
-                              _stat("Poli", d.poli, Icons.local_hospital),
-                              _stat("Jadwal", d.jadwal, Icons.schedule),
-                              _stat("Hari Ini", d.hariIni, Icons.today),
-                              _stat("Kunjungan", d.kunjungan, Icons.assignment),
-                            ],
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 28),
-
-                      // ================= AKSI CEPAT =================
-                      const Text(
-                        "Aksi Cepat",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      Row(
-                        children: [
-                          _quickAction(
-                            "Pegawai",
-                            Icons.people,
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PegawaiPage(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _quickAction(
-                            "Poli",
-                            Icons.local_hospital,
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PoliPage(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _quickAction(
-                            "Akun",
-                            Icons.manage_accounts,
-                            () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AkunPage(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
         ),
       ),
     );
   }
 
-  // ================= STAT CARD =================
   Widget _stat(String title, int value, IconData icon) {
     return SizedBox(
       width: (MediaQuery.of(context).size.width - 44) / 2,
@@ -355,31 +452,6 @@ class _BerandaState extends State<Beranda> {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ================= QUICK ACTION =================
-  Widget _quickAction(String label, IconData icon, VoidCallback onTap) {
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: AppColor.blue),
-              const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontSize: 13)),
-            ],
-          ),
         ),
       ),
     );

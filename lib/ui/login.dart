@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klinik_app/app/constants/app_color.dart';
 import 'package:klinik_app/service/login_service.dart';
 import 'package:klinik_app/widget/bottom_nav.dart';
 
@@ -58,54 +59,124 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColor.backgroundBlue, AppColor.whiteBlue],
+          ),
+        ),
         child: SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height,
-            child: Center(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  /// LOGO
+                  Image.asset('assets/images/tongfang.png', height: 200),
+
+                  const SizedBox(height: 16),
+
                   const Text(
-                    "Login Admin",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                    "KLINIK TONGFANG",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.blue,
+                    ),
                   ),
-                  const SizedBox(height: 50),
-                  Form(
-                    key: _formKey,
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width / 1.3,
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    "Silakan login untuk melanjutkan",
+                    style: TextStyle(color: Colors.black54),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  /// CARD LOGIN
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColor.whiteBlue,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColor.white),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Form(
+                      key: _formKey,
                       child: Column(
                         children: [
+                          /// USERNAME
                           TextFormField(
                             controller: _usernameCtrl,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Username",
-                              border: OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.person),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             validator: _req,
                           ),
-                          const SizedBox(height: 20),
+
+                          const SizedBox(height: 16),
+
+                          /// PASSWORD
                           TextFormField(
                             controller: _passwordCtrl,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: "Password",
-                              border: OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
                             obscureText: true,
                             validator: _req,
                           ),
-                          const SizedBox(height: 40),
+
+                          const SizedBox(height: 24),
+
+                          /// BUTTON LOGIN
                           SizedBox(
-                            width: MediaQuery.of(context).size.width,
+                            width: double.infinity,
+                            height: 48,
                             child: ElevatedButton(
                               onPressed: _doLogin,
-                              child: const Text("Login"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColor.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: AppColor.white,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    "© DPR UBSI 2025",
+                    style: TextStyle(fontSize: 12, color: Colors.black45),
                   ),
                 ],
               ),
