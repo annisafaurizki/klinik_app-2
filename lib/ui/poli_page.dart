@@ -135,10 +135,7 @@ class _PoliPageState extends State<PoliPage> {
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(10),
-                                child: Image.asset(
-                                  AppImage.kHeartBeat,
-                                  color: AppColor.blue,
-                                ),
+                                child: Image.asset(AppImage.kHeartBeat),
                               ),
                             ),
 

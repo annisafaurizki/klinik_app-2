@@ -168,11 +168,6 @@ class _ProfilePageState extends State<ProfilePage> {
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            color: AppColor.blue,
-                            onPressed: () {},
-                          ),
                         ],
                       ),
                     ),

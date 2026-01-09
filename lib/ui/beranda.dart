@@ -104,6 +104,7 @@ class _BerandaState extends State<Beranda> {
   /// =====================
   Widget _roleLottie() {
     String asset;
+
     switch (_role) {
       case 'dokter':
         asset = 'assets/lottie/dokter.json';
@@ -158,7 +159,7 @@ class _BerandaState extends State<Beranda> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        height: double.infinity, // 🔥 background full
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,
@@ -220,12 +221,12 @@ class _BerandaState extends State<Beranda> {
                           ),
                           child: TextField(
                             controller: _searchController,
-                            onChanged: (_) => setState(() {}),
                             onSubmitted: _handleSearch,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               icon: Icon(Icons.search, color: Colors.grey),
-                              hintText: "Cari pasien, poli, dokter, tanggal...",
+                              hintText:
+                                  "Cari pasien, poli, dokter, atau tanggal...",
                             ),
                           ),
                         ),
@@ -267,10 +268,75 @@ class _BerandaState extends State<Beranda> {
 
                         const SizedBox(height: 24),
 
-                        /// =============================
-                        /// KUNJUNGAN DOKTER (SAMA DENGAN KUNJUNGAN PAGE)
-                        /// =============================
-                        if (_role == 'dokter')
+                        /// ================= STATISTIK =================
+                        if (_role == 'admin' || _role == 'petugas')
+                          FutureBuilder<_DashboardData>(
+                            future: _loadDashboard(),
+                            builder: (context, snap) {
+                              if (!snap.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              final d = snap.data!;
+                              return Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  _stat("Pasien", d.pasien, Icons.people),
+                                  _stat("Pegawai", d.pegawai, Icons.badge),
+                                  _stat("Poli", d.poli, Icons.local_hospital),
+                                  _stat("Jadwal", d.jadwal, Icons.schedule),
+                                  _stat(
+                                    "Kunjungan",
+                                    d.kunjungan,
+                                    Icons.assignment,
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+
+                        /// ================= DUMMY PETUGAS =================
+                        if (_role == 'petugas') ...[
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Antrian Pasien Hari Ini",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _AntrianItem(
+                                      label: "Menunggu",
+                                      value: "12",
+                                    ),
+                                    _AntrianItem(label: "Selesai", value: "8"),
+                                    _AntrianItem(label: "Sisa", value: "4"),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        /// ================= KUNJUNGAN DOKTER =================
+                        if (_role == 'dokter') ...[
+                          const SizedBox(height: 24),
                           FutureBuilder<List<Kunjungan>>(
                             future: KunjunganService().listData(),
                             builder: (context, snapshot) {
@@ -281,18 +347,13 @@ class _BerandaState extends State<Beranda> {
                               }
 
                               final all = snapshot.data!;
-                              final kw = _searchController.text.toLowerCase();
+                              final namaDokter = _nama.toLowerCase();
 
-                              final items = kw.isEmpty
-                                  ? all
-                                  : all.where((k) {
-                                      return k.namaPasien
-                                              .toLowerCase()
-                                              .contains(kw) ||
-                                          k.poli.toLowerCase().contains(kw) ||
-                                          k.dokter.toLowerCase().contains(kw) ||
-                                          k.tanggal.toLowerCase().contains(kw);
-                                    }).toList();
+                              final items = all.where((k) {
+                                return k.dokter.toLowerCase().contains(
+                                  namaDokter,
+                                );
+                              }).toList();
 
                               if (items.isEmpty) {
                                 return Container(
@@ -301,7 +362,9 @@ class _BerandaState extends State<Beranda> {
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: const Text("Belum ada data kunjungan"),
+                                  child: const Text(
+                                    "Belum ada pasien untuk dokter ini",
+                                  ),
                                 );
                               }
 
@@ -394,12 +457,76 @@ class _BerandaState extends State<Beranda> {
                               );
                             },
                           ),
+                        ],
                       ],
                     ),
                   ),
                 ),
         ),
       ),
+    );
+  }
+
+  Widget _stat(String title, int value, IconData icon) {
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 44) / 2,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColor.blue),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12)),
+                Text(
+                  value.toString(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// =====================
+/// WIDGET ANTRIAN PETUGAS
+/// =====================
+class _AntrianItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _AntrianItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColor.blue,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
+        ),
+      ],
     );
   }
 }

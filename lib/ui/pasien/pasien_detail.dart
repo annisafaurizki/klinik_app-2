@@ -254,22 +254,47 @@ class _PasienDetailState extends State<PasienDetail> {
                           final ok = await showDialog<bool>(
                             context: context,
                             builder: (_) => AlertDialog(
-                              title: const Text("Konfirmasi"),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.red,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text("Konfirmasi"),
+                                ],
+                              ),
                               content: const Text(
-                                "Yakin ingin menghapus data pasien ini?",
+                                "Apakah kamu yakin ingin menghapus data pasien ini?\n"
+                                "Tindakan ini tidak dapat dibatalkan.",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              actionsPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
                                       Navigator.pop(context, false),
-                                  child: const Text("Batal"),
+                                  child: const Text(
+                                    "Batal",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
                                 ),
-                                ElevatedButton(
+                                ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
+                                    backgroundColor: AppColor.redStatus,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
                                   onPressed: () => Navigator.pop(context, true),
-                                  child: const Text("Hapus"),
+                                  icon: const Icon(Icons.delete, size: 18),
+                                  label: const Text("Hapus"),
                                 ),
                               ],
                             ),
